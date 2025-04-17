@@ -555,7 +555,8 @@ export default function DnDOutsideResource({ localizer }) {
             setWelcomeDialogOpen, setCurrentModule, setPeriod, setDropFieldIsVisible, dropFieldIsVisible,
             developerMode, setDeveloperMode, openAlertDialog,
             setAnalyzeAllConflicts, updateEditingView, handleOpenGroupingDialog,
-            processFilter22, findAllConflicts, getFilteredAppointments2, filterIsEmpty, analyzeConflictsForOne, setAnalyzeConflictsForOne
+            processFilter22, findAllConflicts, getFilteredAppointments2, filterIsEmpty, analyzeConflictsForOne, setAnalyzeConflictsForOne,
+            handleChange
           )}
 
           {MainComponent(

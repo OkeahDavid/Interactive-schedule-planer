@@ -32,7 +32,7 @@ export function LongMenu2(setWelcomeDialogOpen, setEditMode, setSelected, setDra
     openAlertDialog, setCurrentModule, setPeriod, setDropFieldIsVisible, dropFieldIsVisible,
     developerMode, setOpenFilterDrawer, openFilterDrawer, setOpenSettingsDrawer,
     openSettingsDrawer, setDeveloperMode, visibleAppointments, handleOpenGroupingDialog,
-    handleDownloadData) {
+    handleDownloadData, handleChange) {
     const [anchorEl, setAnchorEl] = useState(null)
     const openLongMenu = Boolean(anchorEl)
     const handleClick = (event) => {

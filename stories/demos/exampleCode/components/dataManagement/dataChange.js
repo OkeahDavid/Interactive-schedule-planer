@@ -248,6 +248,7 @@ export function change(type, modified, secondUndo, clearRedo, semesterID, module
                 console.log("deleteAll: semestersMap", prev)
                 return prev
             })
+            localStorage.removeItem("semestersMap"); // <-- Clear from localStorage too
             setVisibleAppointments(prev => prev.filter(a => a.module === "Periods")) ///TODO : error
             setSelected(null)
             setAnalyzeAllConflicts(false)

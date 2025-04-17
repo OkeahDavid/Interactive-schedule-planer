@@ -70,7 +70,8 @@ export function AppBarFunction(openDrawer, openSettingsDrawer, openFilterDrawer,
   setWelcomeDialogOpen, setCurrentModule, setPeriod, setDropFieldIsVisible, dropFieldIsVisible,
   developerMode, setDeveloperMode, openAlertDialog,
   setAnalyzeAllConflicts, updateEditingView, handleOpenGroupingDialog,
-  processFilter22, findAllConflicts, getFilteredAppointments2, filterIsEmpty, analyzeConflictsForOne, setAnalyzeConflictsForOne
+  processFilter22, findAllConflicts, getFilteredAppointments2, filterIsEmpty, analyzeConflictsForOne, setAnalyzeConflictsForOne,
+  handleChange
 ) {
   // console.log("AppBarFunction", semestersMap)
   const currentSemesterID = getSemesterIDFromDate(visibleDate)
@@ -117,7 +118,7 @@ export function AppBarFunction(openDrawer, openSettingsDrawer, openFilterDrawer,
         openAlertDialog, setCurrentModule, setPeriod, setDropFieldIsVisible, dropFieldIsVisible,
         developerMode, setOpenFilterDrawer, openFilterDrawer, setOpenSettingsDrawer,
         openSettingsDrawer, setDeveloperMode, visibleAppointments, handleOpenGroupingDialog,
-        handleDownloadData)}
+        handleDownloadData, handleChange)}
 
       {!(openDrawer || openSettingsDrawer || openFilterDrawer) && <Typography variant="h6" component="div">
         Interactive Schedule Planner
