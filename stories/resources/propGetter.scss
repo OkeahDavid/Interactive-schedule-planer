@@ -1,0 +1,90 @@
+/**
+ * These are classes applied in the propGetter stories
+ */
+
+.powderBlue {
+  background-color: powderblue;
+  color: black;
+}
+
+.darkGreen {
+  background-color: darkgreen;
+  color: white;
+}
+
+.magenta {
+  background-color: rgb(125, 0, 125);
+  color: white;
+}
+
+.irrelevant{
+  background-color: #979797;
+  opacity: 0.5;
+}
+
+.red {
+  background-color: red;
+  border-color: white;
+  color: white;
+}
+.green {
+  background-color: green;
+  border-color: white;
+  color: white;
+}
+.selectedYellow {
+  background-color: yellow;
+  // border-color: yellow;
+  color: darkblue;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.orange {
+  background-color: orange;
+}
+
+.lightConflict {
+  background-color: lightpink;
+}
+
+.mediumConflict {
+  background-color: #FF5050;
+}
+
+.strongConflict {
+  background-color: #D20000;
+}
+
+.tutorialWeakConflict {
+  background-color: rgb(147, 255, 244);
+}
+
+.tutorialMediumConflict {
+  background-color: turquoise;
+}
+
+.tutorialStrongConflict {
+  background-color: rgb(0, 176, 158);
+}
+
+.lightGreen {
+  background-color: rgb(74, 186, 0);
+  color: white;
+}
+
+.slotDefault {
+  background-color: '#FAF0E6';
+  color: 'black';
+}
+
+.tuesday {
+  @extend .powderBlue;
+}
+
+#my_scheduler {
+  @extend .powderBlue;
+  padding: 0.5em;
+  border: 1px solid blue;
+}
