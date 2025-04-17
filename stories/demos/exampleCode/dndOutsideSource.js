@@ -50,6 +50,31 @@ DnDOutsideResource.propTypes = {
 }
 
 
+// Utility: Recursively convert ISO date strings to Date objects in an object/array
+function reviveDates(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(reviveDates);
+  } else if (obj && typeof obj === 'object') {
+    const newObj = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const val = obj[key];
+        if (
+          (key === 'start' || key === 'end' || key === 'seriesStart' || key === 'seriesEnd') &&
+          typeof val === 'string' &&
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?$/.test(val)
+        ) {
+          newObj[key] = new Date(val);
+        } else {
+          newObj[key] = reviveDates(val);
+        }
+      }
+    }
+    return newObj;
+  }
+  return obj;
+}
+
 export default function DnDOutsideResource({ localizer }) {
 
 
@@ -57,7 +82,14 @@ export default function DnDOutsideResource({ localizer }) {
 
   // Data
 
-  const [semestersMap, setSemestersMap] = useState({ maxID: 1 })
+  const [semestersMap, setSemestersMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem('semestersMap');
+      return saved ? reviveDates(JSON.parse(saved)) : { maxID: 1 };
+    } catch (e) {
+      return { maxID: 1 };
+    }
+  });
   const [studyplans, setStudyplans] = useState(studyplansInit) // Todo: Implement CRUD for studyplans
   const [rooms, setRooms] = useState(['Hörsaal IV', 'Hörsaal V', "03A20", "03A21", "03A23"]);
   const [lecturers, setLecturers] = useState([...names]);
@@ -65,6 +97,84 @@ export default function DnDOutsideResource({ localizer }) {
 
   const [importToCondensedWeek, setImportToCondensedWeek] = useState(true)
 
+  // Load auto-saved data when component mounts
+  useEffect(() => {
+    try {
+      const autoSaveSnapshot = localStorage.getItem('isp_autosave_snapshot');
+      if (autoSaveSnapshot) {
+        const parsedSnapshot = JSON.parse(autoSaveSnapshot);
+        
+        // Extract data from the snapshot
+        const { state } = parsedSnapshot;
+        if (state) {
+          // Set the visual date to match the saved state
+          if (state.visibleDate) {
+            setVisibleDate(new Date(state.visibleDate));
+          }
+          
+          // Extract semester data if available
+          const currentSemesterID = getSemesterIDFromDate(state.visibleDate ? new Date(state.visibleDate) : new Date());
+          
+          // Set up a special reload action
+          const reloadAction = "reloadFromAutoSave";
+          
+          // Load using the standard change function
+          // This will automatically invoke the auto-save mechanism again
+          console.log("Loading auto-saved data from localStorage");
+          setSemestersMap(prevSemestersMap => {
+            // Keep the same structure but return the saved data
+            return { ...prevSemestersMap, ...(state.semestersMap || {}) };
+          });
+          
+          // Load other states if available
+          if (state.filters) {
+            // Load filters
+            if (state.filters.filterPeriods) setFeature1(state.filters.filterPeriods);
+            if (state.filters.filterStudyplans) setFeature2(state.filters.filterStudyplans);
+            if (state.filters.filterModules) setFeature3(state.filters.filterModules);
+            if (state.filters.filterTypes) setFeature4(state.filters.filterTypes);
+            if (state.filters.filterRhythms) setFeature5(state.filters.filterRhythms);
+            if (state.filters.filterLecturers) setFeature6(state.filters.filterLecturers);
+            if (state.filters.filterRooms) setFeature7(state.filters.filterRooms);
+            if (state.filters.filterParticipants) setFeature8(state.filters.filterParticipants);
+            if (state.filters.filterAppointments) setFeature9(state.filters.filterAppointments);
+            if (state.filters.filterDraggable) setFilterDraggable(state.filters.filterDraggable);
+            if (state.filters.freeSlotConflictSeverity) setFreeSlotConflictSeverity(state.filters.freeSlotConflictSeverity);
+          }
+          
+          // Load module and period if available
+          if (state.module) setCurrentModule(state.module);
+          if (state.period !== undefined) setPeriod(state.period);
+          
+          // Set conflict analysis states if available
+          if (state.analyzeAllConflicts !== undefined) setAnalyzeAllConflicts(state.analyzeAllConflicts);
+          if (state.analyzeConflictsForOne !== undefined) setAnalyzeConflictsForOne(state.analyzeConflictsForOne);
+          
+          // Process the filter to update visible appointments
+          setTimeout(() => {
+            processFilter22(
+              new Date(state.visibleDate || new Date()),
+              state.period || 0,
+              getFilteredAppointments2(new Date(state.visibleDate || new Date()))
+            );
+          }, 100);
+          
+          // Mark that we've loaded the data so we don't double-save
+          localStorage.setItem('isp_has_unsaved_changes', 'false');
+        }
+      }
+    } catch (error) {
+      console.error("Error loading auto-saved data:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('semestersMap', JSON.stringify(semestersMap));
+    } catch (e) {
+      // Optionally handle error
+    }
+  }, [semestersMap]);
 
   //////////////////////////////////////////////////////////////
   // Conflict Analysis

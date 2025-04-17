@@ -95,13 +95,22 @@ export const downloadData = (semestersMap, lvMappings, studyplans, lecturers, ro
     link.download = 'dataScheme.json';
     link.click();
     URL.revokeObjectURL(link.href);
-    // Todo: Alexander: After downloading the data, the localStorage can be cleared and a snapshot should be saved,
-    // which can be used to continue with the last session.
-    // What is needed for the snapshot: 
-    //   type, modified, secondUndo, semesterID, module,
-    //   lecturers, rooms, studyplans, semestersMap,
-    //   undoStack, redoStack, ?
-    //   visibleDate, selected, analyzeAllConflicts, analyzeConflictsForOne,
-    //   freeSlotConflictSeverity, filterPeriods, filterStudyplans, filterModules, filterTypes, filterRhythms,
-    //   filterLecturers, filterRooms, filterParticipants, filterAppointments, filterDraggable
+    
+    // Save a complete snapshot of the data for "Continue with last Session" functionality
+    const completeSnapshot = {
+        timestamp: new Date().toISOString(),
+        data: {
+            semestersMap,
+            lvMappings,
+            studyplans,
+            lecturers,
+            rooms
+        }
+    };
+    
+    // Save the snapshot to localStorage for later retrieval
+    localStorage.setItem('isp_complete_snapshot', JSON.stringify(completeSnapshot));
+    
+    // Clear the unsaved changes flag since we just saved everything
+    localStorage.setItem('isp_has_unsaved_changes', 'false');
 };

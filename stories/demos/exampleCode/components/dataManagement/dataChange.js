@@ -1,4 +1,3 @@
-
 import { isUndefined, lowerCase } from 'lodash'
 
 // Storybook cannot alias this, so you would use 'react-big-calendar/lib/addons/dragAndDrop/styles.scss'
@@ -21,16 +20,16 @@ export function change(type, modified, secondUndo, clearRedo, semesterID, module
     // Todo: When to transfer to condensed week?
     // Todo: Maybe add id only in here?
     switch (type) {
-        case "add": // Todo: Increment name
+        case "add":
             storeUndoData(type, modified, secondUndo, undoStack, setUndoStack, warnSwitch, undoNumber)
             setSemestersMap(prev => {
-                // console.warn("Called two times? Function not pure?") // Todo?
                 let tmp = checkIfSemesterAndModuleExist(prev, semesterID, module)
                 let appointmentType = (lowerCase(mapType(modified.type > 30 ? 100 : modified.type)) + "s")
                 const newAppointment = { ...modified, id: tmp.maxID + 1 }
                 updateEditingView(newAppointment);
-                // This is, to make the function pure, to prevent running it twice in strict React mode.
-                tmp = {
+                
+                // Create the updated state
+                const updatedState = {
                     ...tmp,
                     [semesterID]: {
                         ...tmp[semesterID],
@@ -40,10 +39,11 @@ export function change(type, modified, secondUndo, clearRedo, semesterID, module
                         }
                     },
                     maxID: tmp.maxID + 1
-                }
-                // console.log("semestersMap[" + semesterID + "][" + module + "]", tmp[semesterID][module], tmp)
-                processFilter(tmp, modified.start, modified, "add")
-                return tmp
+                };
+                
+                // Process filter directly with the complete updated state
+                processFilter(updatedState, modified.start, newAppointment, "add")
+                return updatedState
             })
             break;
         case "addMany":
@@ -1074,10 +1074,51 @@ export function logChanges(type, modified, secondUndo, semesterID, module,
     freeSlotConflictSeverity, filterPeriods, filterStudyplans, filterModules, filterTypes, filterRhythms,
     filterLecturers, filterRooms, filterParticipants, filterAppointments, filterDraggable
 ) {
-    console.warn("Todo: logChanges()")
-    // Alexander, here you can implement logging changes.
-    // You may want to only implement your auto-save functionality first.
-    // Todo ...
+    console.log("Auto-saving changes to localStorage");
+    
+    // 1. Create a snapshot of the current state
+    const snapshot = {
+        timestamp: new Date().toISOString(),
+        lastAction: {
+            type,
+            semesterID,
+            module
+        },
+        state: {
+            semesterID, 
+            module,
+            visibleDate: visibleDate ? visibleDate.toISOString() : null,
+            selected: selected ? {
+                id: selected.id,
+                module: selected.module,
+                title: selected.title
+            } : null,
+            filters: {
+                freeSlotConflictSeverity,
+                filterPeriods,
+                filterStudyplans,
+                filterModules,
+                filterTypes, 
+                filterRhythms,
+                filterLecturers,
+                filterRooms,
+                filterParticipants,
+                filterAppointments,
+                filterDraggable
+            },
+            analyzeAllConflicts,
+            analyzeConflictsForOne
+        }
+    };
+
+    // 2. Save the snapshot to localStorage
+    localStorage.setItem('isp_autosave_snapshot', JSON.stringify(snapshot));
+    
+    // 3. Save the timestamp of the last change for change detection
+    localStorage.setItem('isp_last_change_timestamp', new Date().toISOString());
+
+    // 4. Update the unsaved changes flag
+    localStorage.setItem('isp_has_unsaved_changes', 'true');
 }
 
 

@@ -39,8 +39,28 @@ export function WelcomeDialog(openWelcomeDialog, setWelcomeDialogOpen, handleOpe
     setDropFieldIsVisible, handleChange, semestersMap, showAlertMessage, developerMode) {
     // console.log("WelcomeDialog", semestersMap)
 
-    // Todo: Alexander: Somewhere here it should be checked, if there are unsaved changes
-    // and then a warning should be triggered with showAlertMessage.
+    // Check if there are unsaved changes when opening the welcome dialog
+    React.useEffect(() => {
+        if (openWelcomeDialog) {
+            // Check for unsaved changes in localStorage
+            const hasUnsavedChanges = localStorage.getItem('isp_has_unsaved_changes') === 'true';
+            const lastChangeTimestamp = localStorage.getItem('isp_last_change_timestamp');
+            
+            if (hasUnsavedChanges && lastChangeTimestamp) {
+                // Calculate how old the changes are
+                const lastChangeDate = new Date(lastChangeTimestamp);
+                const timeSinceLastChange = Date.now() - lastChangeDate.getTime();
+                const minutesSinceLastChange = Math.floor(timeSinceLastChange / 60000);
+                
+                // Show a warning message about unsaved changes
+                showAlertMessage(
+                    'warning', 
+                    `You have unsaved changes from ${minutesSinceLastChange} minute${minutesSinceLastChange === 1 ? '' : 's'} ago. Consider using "Continue with last Session" to restore them.`
+                );
+            }
+        }
+    }, [openWelcomeDialog, showAlertMessage]);
+
     return (
         <div>
             <Dialog
@@ -74,12 +94,46 @@ export function WelcomeDialog(openWelcomeDialog, setWelcomeDialogOpen, handleOpe
                         setDropFieldIsVisible, handleChange, semestersMap, showAlertMessage)}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setWelcomeDialogOpen(false)
-                    }>Start from Scratch</Button>
-                    <Button onClick={() => setWelcomeDialogOpen(false)
-                        // Todo: Alexander: When this button is clicked, the last snapshot should be loaded, that has been saved when downloading the data.
-                    }>Continue with last Session</Button>
-
+                    <Button onClick={() => {
+                        // Clear any autosaved data if starting from scratch
+                        localStorage.removeItem('isp_autosave_snapshot');
+                        localStorage.setItem('isp_has_unsaved_changes', 'false');
+                        setWelcomeDialogOpen(false);
+                    }}>Start from Scratch</Button>
+                    <Button onClick={() => {
+                        // Load the last snapshot
+                        const lastCompleteSnapshot = localStorage.getItem('isp_complete_snapshot');
+                        const lastAutoSaveSnapshot = localStorage.getItem('isp_autosave_snapshot');
+                        
+                        if (lastCompleteSnapshot || lastAutoSaveSnapshot) {
+                            try {
+                                // Prefer the complete snapshot if available, otherwise use autosave
+                                let dataToLoad = null;
+                                
+                                if (lastCompleteSnapshot) {
+                                    const parsedSnapshot = JSON.parse(lastCompleteSnapshot);
+                                    dataToLoad = parsedSnapshot.data;
+                                    showAlertMessage('success', `Loaded data from ${new Date(parsedSnapshot.timestamp).toLocaleString()}`);
+                                } else {
+                                    const parsedSnapshot = JSON.parse(lastAutoSaveSnapshot);
+                                    dataToLoad = parsedSnapshot.state;
+                                    showAlertMessage('success', `Loaded auto-saved data from ${new Date(parsedSnapshot.timestamp).toLocaleString()}`);
+                                }
+                                
+                                // Apply the loaded data through handleChange
+                                if (dataToLoad) {
+                                    handleChange(dataToLoad, true);
+                                }
+                            } catch (error) {
+                                console.error('Failed to load saved session:', error);
+                                showAlertMessage('error', 'Failed to load the last session data');
+                            }
+                        } else {
+                            showAlertMessage('info', 'No previous session data found');
+                        }
+                        
+                        setWelcomeDialogOpen(false);
+                    }}>Continue with last Session</Button>
                 </DialogActions>
             </Dialog>
         </div>
