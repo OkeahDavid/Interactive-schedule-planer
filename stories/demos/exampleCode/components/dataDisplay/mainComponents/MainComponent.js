@@ -27,7 +27,7 @@ import { getConflictTitle } from '../conflictAnalysis'
 import { appointmentPropGetter2, getToolTipString2, Main, Appointment2 } from './componentsAppearance';
 import { buildAppointment } from '../../dataManagement/dataImport';
 import { SemesterPicker } from '../../userInteraction/components';
-
+import { setInitialAppointments, getInitialAppointments } from './initialAppointments';
 
 
 const DragAndDropCalendar = withDragAndDrop(Calendar)
@@ -94,6 +94,13 @@ export function MainComponent(
         // }
 
         const clickTimeout = useRef(null);
+
+        // Store initial appointments on first load
+        React.useEffect(() => {
+            if (visibleAppointments && visibleAppointments.length > 0 && getInitialAppointments().length === 0) {
+                setInitialAppointments(visibleAppointments);
+            }
+        }, [visibleAppointments]);
 
         const handleSelectAppointment = useCallback(
             (appointment) => {

@@ -8,6 +8,7 @@ import scrollbarSize from 'dom-helpers/scrollbarSize'
 import { navigate } from './utils/constants'
 import { inRange } from './utils/eventLevels'
 import { isSelected } from './utils/selection'
+import { getInitialAppointments, isAppointmentChanged } from '../stories/demos/exampleCode/components/dataDisplay/mainComponents/initialAppointments'
 
 function Agenda({
   accessors,
@@ -44,6 +45,8 @@ function Agenda({
       )
     )
 
+    const initialAppointments = getInitialAppointments();
+
     return events.map((event, idx) => {
       let title = accessors.title(event)
       let end = accessors.end(event)
@@ -70,10 +73,13 @@ function Agenda({
           false
         )
 
+      // Mark changed appointments
+      const changed = isAppointmentChanged(event, initialAppointments)
+
       return (
         <tr
           key={dayKey + '_' + idx}
-          className={userProps.className}
+          className={userProps.className + (changed ? ' rbc-agenda-changed' : '')}
           style={userProps.style}
         >
           {first}
@@ -86,6 +92,7 @@ function Agenda({
             }
           >
             {Event ? <Event event={event} title={title} /> : title}
+            {changed && <span style={{ color: 'red', marginLeft: 8 }} title="Changed">★</span>}
           </td>
         </tr>
       )
