@@ -34,7 +34,36 @@ export function getConflictTitle(conflictSeverity) {
     }
 }
 
+// Helper: Expand recurring events (bi-weekly, etc.) into their actual occurrences within a semester period
+function expandRecurringEvents(appointments, periods) {
+    let expanded = [];
+    for (const a of appointments) {
+        if (!a.rhythm || a.rhythm === 0) {
+            expanded.push(a);
+            continue;
+        }
+        // Find the period (e.g., lecture period) this event belongs to
+        const period = periods && periods.find(p => p.start <= a.start && a.start <= p.end);
+        if (!period) {
+            expanded.push(a);
+            continue;
+        }
+        let current = new Date(a.start);
+        let end = new Date(a.seriesEnd || period.end);
+        let step = a.rhythm; // e.g., 7 for weekly, 14 for bi-weekly
+        while (current <= end) {
+            let newEvent = { ...a, start: new Date(current), end: new Date(current.getTime() + (a.end - a.start)) };
+            expanded.push(newEvent);
+            current.setDate(current.getDate() + step);
+        }
+    }
+    return expanded;
+}
 
+// Helper: Check if two events overlap (including multi-day/block events)
+function eventsOverlap(a, b) {
+    return a.start < b.end && b.start < a.end;
+}
 
 export function addConflictFieldsForAll(visibleAppointments,
     moduleWithSameStudyplanSemesterModulesMap, previousYearConflictMap, nextYearConflictMap
@@ -43,34 +72,40 @@ export function addConflictFieldsForAll(visibleAppointments,
         return visibleAppointments
     }
     const semesterID = getSemesterIDFromDate(visibleAppointments[0].start)
-    console.log("addConflictFieldsForAll", semesterID, moduleWithSameStudyplanSemesterModulesMap)
+    // Find exam periods (type 444)
+    const examPeriods = visibleAppointments.filter(a => a.type === 444);
+    // Expand recurring events
+    const expandedAppointments = expandRecurringEvents(visibleAppointments, examPeriods);
     let enhancedAppointments2 = []
-    for (const a of visibleAppointments) {
+    for (const a of expandedAppointments) {
         let lecturerConflict = false
         let roomConflict = false
         let sameStudyplanSemester = new Set()
         const modulesMap = moduleWithSameStudyplanSemesterModulesMap[semesterID % 10][a.module]
         let previousYearConflicts = new Set()
         let nextYearConflicts = new Set()
+        let blockExamConflict = false;
+        // Check for block event (multi-day) overlapping with exam period
+        if (a.type === 40) { // Block lecture
+            for (const exam of examPeriods) {
+                if (eventsOverlap(a, exam)) {
+                    blockExamConflict = true;
+                    break;
+                }
+            }
+        }
         if (a.type !== 444) {
-            for (const b of visibleAppointments) {
-                if (b.type !== 444 && a.id !== b.id && checkTimeOverlap(a, b)) {
-                    // if (b.title.includes("Studyplan") && a.title.startsWith("Room")) console.log(a, b, a.module, b.module, visibleAppointments, modulesMap, moduleWithSameStudyplanSemesterModulesMap)
-
-                    // add lecturer conflict
+            for (const b of expandedAppointments) {
+                if (b.type !== 444 && a.id !== b.id && eventsOverlap(a, b)) {
                     if (!lecturerConflict && a.lecturer === b.lecturer) {
                         lecturerConflict = true
                     }
-                    // add room conflict
                     if (!roomConflict && a.room === b.room) {
                         roomConflict = true
                     }
-                    // same semester conflict
                     if (!isUndefined(modulesMap) && modulesMap.has(b.module)) {
                         sameStudyplanSemester.add(b.module)
-                        // if (b.title.includes("Studyplan") && a.title.startsWith("Room")) console.log(sameStudyplanSemester)
                     }
-                    // year conflicts
                     if (previousYearConflictMap.get(a.module).has(b.module)) {
                         previousYearConflicts.add(b.module)
                     }
@@ -86,14 +121,12 @@ export function addConflictFieldsForAll(visibleAppointments,
             roomConflict: (roomConflict ? a.room : false),
             sameStudyplanSemester,
             previousYearConflicts,
-            nextYearConflicts
+            nextYearConflicts,
+            blockExamConflict
         })
     }
-
-    // console.log("enhancedAppointments2FA", enhancedAppointments2)
     return enhancedAppointments2
 }
-
 
 export function addConflictFieldsForOne4(theOne, filteredAppointments54, moduleWithSameStudyplanSemesterModulesMap, previousYearConflictMap, nextYearConflictMap) {
     const conflictingModulesSet = moduleWithSameStudyplanSemesterModulesMap[getSemesterIDFromDate(theOne.start) % 10][theOne.module];
